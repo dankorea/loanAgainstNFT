@@ -1,0 +1,25 @@
+dependencies:
+  - OpenZeppelin/openzeppelin-contracts@4.7.0
+  - smartcontractkit/chainlink-brownie-contracts@0.5.1
+compiler:
+  solc:
+    remappings:
+      - '@openzeppelin=OpenZeppelin/openzeppelin-contracts@4.7.0'
+      - '@chainlink=smartcontractkit/chainlink-brownie-contracts@0.5.1'
+dotenv: .env
+networks:
+  development:
+    verify: False
+  ganache: 
+    verify: False
+  goerli:
+    verify: True
+    loan_token: '0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6'
+    a_nft: '0x39fdf5565fa0b762b513a3e2ebe2517a63086821'
+    b_nft: '0x06c586b4a9f95d6480cf6ab66ae16c3a391d7f02'
+    loan_token_price_feed: '0xD4a33860578De61DBAbDc8BFdb98FD742fA7028e'
+    simple_nft_price_feed: '0xD4a33860578De61DBAbDc8BFdb98FD742fA7028e'
+    a_nft_price_feed: '0x0d79df66BE487753B02D015Fb622DED7f0E9798d'
+    b_nft_price_feed: '0xA39434A63A52E749F02807ae27335515BA4b07F7'
+wallets:
+  from_key: ${PRIVATE_KEY}
