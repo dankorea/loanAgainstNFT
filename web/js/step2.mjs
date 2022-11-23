@@ -6,8 +6,8 @@
 
 import { getTokenContract } from "./contract.mjs";
 
-const brownie_config = await inputJsonFile("../contracts/brownie-config.json");
-const helper_config = await inputJsonFile("../contracts/helper-config.json");
+const brownie_config = await inputJsonFile("../conf/brownie-config.json");
+const helper_config = await inputJsonFile("../conf/helper-config.json");
 const chainId = await web3.eth.net.getId();
 // // 1. LOANT as loan token
 // const networkMapping = await inputJsonFile("../contracts/map.json");
