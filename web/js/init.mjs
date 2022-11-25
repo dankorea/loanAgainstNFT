@@ -30,13 +30,23 @@ window.onload = async () => {
   });
 };
 
-function getItemListItem(item) {
+function showLoanableNfts(item) {
   const li = document.createElement("li");
   li.className = "p-2 m-2 border";
   const title = document.createElement("div");
   title.innerText = item.title;
   title.className = "text-xl text-bold font-serif";
   li.appendChild(title);
+  const contractAddr = document.createElement("div");
+  contractAddr.innerText = item.contract.address;
+  contractAddr.className = "text-sm";
+  li.appendChild(contractAddr);
+  const tokenID = document.createElement("div");
+  console.log(eval(item.id.tokenId).toString(10));
+  // console.log(item.id.tokenId);
+  tokenID.innerText = eval(item.id.tokenId).toString(10);
+  tokenID.className = "text-sm";
+  li.appendChild(tokenID);
   const description = document.createElement("div");
   description.innerText = item.description;
   description.className = "text-sm";
@@ -48,17 +58,24 @@ function getItemListItem(item) {
     pic.setAttribute("src", imgUrl);
     li.appendChild(pic);
   }
+
+  // how to click the button and send the corresponding nft info???
+  const offerBtn = document.createElement("button");
+  offerBtn.type = "submit";
+  offerBtn.innerText = "My Offers";
+  li.appendChild(offerBtn);
+
   return li;
 }
 
-getNfts("0xF5FFF32CF83A1A614e15F25Ce55B0c0A6b5F8F2c").then((resp) => {
+getNfts("0x6802AD9d71976Cd2C6c10aB093809D8237beedd2").then((resp) => {
   console.log(resp);
   if (resp && resp.ownedNfts) {
     const ul = document.createElement("ul");
     ul.className = "grid grid-cols-3 gap-4"
     document.getElementById("main").appendChild(ul);
     resp.ownedNfts.forEach((item) => {
-      const li = getItemListItem(item);
+      const li = showLoanableNfts(item);
       ul.appendChild(li);
     });
   }

@@ -50,22 +50,22 @@
         </div>
 
         <div class="m-2 p-4 shadow-dark-300 rounded-lg shadow-2xl">
-          <div class="font-bold mb-2 border-b-dark-50">可以抵押NFT信息</div>
+          <div class="font-bold mb-2 border-b-dark-50">offer info</div>
           <div>
             <div class="mb-3">
-              <label for="nftContractAddress" class="mr-2 w-24 inline-block text-right">NFT合约地址</label>
+              <label for="loanAmount" class="mr-2 w-24 inline-block text-right">loan amount</label>
               <input class="w-48 py-1 px-2 ring-1 rounded-md focus:ring-3 focus:ring-blue-300 underline-dark-200"
-                type="text" id="nftContractAddress" />
+                type="text" id="loanAmount" />
             </div>
             <div class="mb-3">
-              <label for="nftIndex" class="mr-2 w-24 inline-block text-right">NFT index</label>
+              <label for="loanPeriod" class="mr-2 w-24 inline-block text-right">loan period</label>
               <input class="w-48 py-1 px-2 ring-1 rounded-md focus:ring-3 focus:ring-blue-300 " type="text"
-                id="nftIndex" />
+                id="loanPeriod" />
             </div>
             <div class="mb-3">
-              <label for="nftUri" class="mr-2 w-24 inline-block text-right">NFT uri</label>
+              <label for="loanInterest" class="mr-2 w-24 inline-block text-right">loan interest</label>
               <input class="w-48 py-1 px-2 ring-1 rounded-md focus:ring-3 focus:ring-blue-300 " type="text"
-                id="nftUri" />
+                id="loanInterest" />
             </div>
             <div class="flex justify-start hidden">
               <button id="checkNftInfo" class="bg-green-700 text-white rounded-lg p-2 mr-2">Check</button>
@@ -74,22 +74,22 @@
         </div>
 
         <div class="m-2 p-4 shadow-dark-300 rounded-lg shadow-2xl">
-          <div class="font-bold mb-2 border-b-dark-50">可提供货币的Offer</div>
+          <div class="font-bold mb-2 border-b-dark-50">repay info</div>
           <div>
             <div class="mb-3">
-              <label for="tokenAmount" class="mr-2 w-12 inline-block text-right">金额</label>
+              <label for="repayAddress" class="mr-2 w-12 inline-block text-right">repay Address</label>
               <input class="w-48 py-1 px-2 ring-1 rounded-md focus:ring-3 focus:ring-blue-300 underline-dark-200"
-                type="text" id="tokenAmount" />
+                type="text" id="repayAddress" />
             </div>
             <div class="mb-3">
-              <label for="tokenExpiration" class="mr-2 w-12 inline-block text-right">周期</label>
+              <label for="repayAmount" class="mr-2 w-12 inline-block text-right">repay Amount</label>
               <input class="w-48 py-1 px-2 ring-1 rounded-md focus:ring-3 focus:ring-blue-300 " type="text"
-                id="tokenExpiration" />
+                id="repayAmount" />
             </div>
             <div class="mb-3">
-              <label for="tokenInterest" class="mr-2 w-12 inline-block text-right">利息</label>
+              <label for="expireTime" class="mr-2 w-12 inline-block text-right">expire Time</label>
               <input class="w-48 py-1 px-2 ring-1 rounded-md focus:ring-3 focus:ring-blue-300 " type="text"
-                id="tokenInterest" />
+                id="expireTime" />
             </div>
             <div class="flex justify-start">
               <button id="borrowBtn" class="bg-green-700 text-white rounded-lg p-2 mr-2">Borrow</button>
@@ -116,7 +116,7 @@
               <span>tokenBalance:</span>
               <span id="tokenBalance"> --- </span>
             </div>
-            <button id="checkApproveTokenBtn" class="bg-purple-700 text-white rounded-lg p-2">Check</button>
+            <button id="checkStakedNftsBtn" class="bg-purple-700 text-white rounded-lg p-2">Check</button>
             <button id="approveTokenBtn" class="bg-green-700 text-white rounded-lg p-2">Approve</button>
           </div>
 
@@ -129,37 +129,42 @@
                   type="text" id="stakedNftAddress" />
               </div>
               <div class="mb-3">
-                <label for="stakedNftIndex" class="mr-2 w-24 inline-block text-right">Index</label>
+                <label for="stakedNftId" class="mr-2 w-24 inline-block text-right">ID</label>
                 <input class="w-48 py-1 px-2 ring-1 rounded-md focus:ring-3 focus:ring-blue-300 " type="text"
-                  id="stakedNftIndex" />
+                  id="stakedNftId" />
               </div>
               <div class="mb-3">
-                <label for="stakedNftUri" class="mr-2 w-24 inline-block text-right">NFT uri</label>
+                <label for="redeemAmount" class="mr-2 w-24 inline-block text-right">redeem Amount</label>
                 <input class="w-48 py-1 px-2 ring-1 rounded-md focus:ring-3 focus:ring-blue-300 " type="text"
-                  id="stakedNftUri" />
+                  id="redeemAmount" />
+                <div class="mb-3">
+                  <label for="redeemDeadline" class="mr-2 w-24 inline-block text-right">redeem Deadline</label>
+                  <input class="w-48 py-1 px-2 ring-1 rounded-md focus:ring-3 focus:ring-blue-300 " type="text"
+                    id="redeemDeadline" />
+                </div>
               </div>
             </div>
           </div>
 
           <div class="m-2 p-4 shadow-dark-300 rounded-lg shadow-2xl">
-            <div class="font-bold mb-2 border-b-dark-50">已贷出的Loan信息</div>
+            <div class="font-bold mb-2 border-b-dark-50">what's left?</div>
             <div>
               <div class="mb-3">
-                <label for="repayId" class="mr-2 w-24 inline-block text-right">查询?</label>
+                <label for="numOfStakedLeft" class="mr-2 w-24 inline-block text-right"># of staked?</label>
                 <input class="w-48 py-1 px-2 ring-1 rounded-md focus:ring-3 focus:ring-blue-300 underline-dark-200"
-                  type="text" id="repayId" />
+                  type="text" id="numOfStakedLeft" />
               </div>
               <div class="mb-3">
-                <span class="mr-2 w-24  inline-block text-right">待还金额</span>
-                <span id="repayAmount"> --- </span>
+                <span class="mr-2 w-24  inline-block text-right">totally left to repay</span>
+                <span id="totallyLeftToRepay"> --- </span>
               </div>
               <div class="mb-3">
-                <span class="mr-2 w-24  inline-block text-right">截止时间</span>
-                <span id="deadline"> --- </span>
+                <span class="mr-2 w-24  inline-block text-right">earliest deadline</span>
+                <span id="earliestDeadline"> --- </span>
               </div>
               <div class="flex justify-start">
-                <button id="checkRepayInfoBtn" class="bg-green-700 text-white rounded-lg p-2 mr-2">查询</button>
-                <button id="repayBtn" class="bg-green-700 text-white rounded-lg p-2 mr-2">Repay</button>
+                <button id="repayBtn" class="bg-green-700 text-white rounded-lg p-2 mr-2">repay Loan</button>
+                <button id="unStakingBtn" class="bg-green-700 text-white rounded-lg p-2 mr-2">nft UnStaking</button>
               </div>
             </div>
           </div>
