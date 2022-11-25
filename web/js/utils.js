@@ -62,9 +62,19 @@ const requestOptions = {
   redirect: "follow",
 };
 const whiteListContractAddr = ["0x3a1e7aba44bf21a66344d7a0f795a7df0b49ed60", "0x06c586b4a9f95d6480cf6ab66ae16c3a391d7f02"]; // doggie and XENft address
+// ??? need contract upgrade to get allowedNfts by function
 
 async function getNfts(ownerAddr) {
-  // e.g. getNfts("0xF5FFF32CF83A1A614e15F25Ce55B0c0A6b5F8F2c")
+  // const user = window.userAddress;
+  // const chainId = await web3.eth.net.getId();
+  // const networkMapping = await inputJsonFile("../conf/map.json");
+  // const escrowAddress = networkMapping[chainId]["Escrow"][0];
+  // const escrowJson = await inputJsonFile("../contracts/Escrow.json");
+  // const escrowContract = new web3.eth.Contract(escrowJson.abi, escrowAddress);
+
+  // const allowedNfts = await escrowContract.methods.allowedNfts().call({ "from": user });
+  // console.log(allowedNfts);
+
   // const baseURL = `https://eth-mainnet.g.alchemy.com/nft/v2/${apiKey}/getNFTs/`;
   const baseURL = `https://eth-goerli.g.alchemy.com/nft/v2/${apiKey}/getNFTs/`;
   const withMetadata = true;
