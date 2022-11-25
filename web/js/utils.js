@@ -16,6 +16,44 @@ async function inputJsonFile(path) {
   }
 }
 
+function showLoanableNfts(item) {
+  const li = document.createElement("li");
+  li.className = "p-2 m-2 border";
+  const title = document.createElement("div");
+  title.innerText = item.title;
+  title.className = "text-xl text-bold font-serif";
+  li.appendChild(title);
+  const contractAddr = document.createElement("div");
+  contractAddr.innerText = item.contract.address;
+  contractAddr.className = "text-sm";
+  li.appendChild(contractAddr);
+  const tokenID = document.createElement("div");
+  console.log(eval(item.id.tokenId).toString(10));
+  // console.log(item.id.tokenId);
+  tokenID.innerText = eval(item.id.tokenId).toString(10);
+  tokenID.className = "text-sm";
+  li.appendChild(tokenID);
+  const description = document.createElement("div");
+  description.innerText = item.description;
+  description.className = "text-sm";
+  li.appendChild(description);
+  const imgUrl = item.media[0].gateway;
+  if (imgUrl) {
+    const pic = new Image(100, 100);
+    pic.setAttribute("loading", "lazy");
+    pic.setAttribute("src", imgUrl);
+    li.appendChild(pic);
+  }
+
+  // how to click the button and send the corresponding nft info???
+  const offerBtn = document.createElement("button");
+  offerBtn.type = "submit";
+  offerBtn.innerText = "My Offers";
+  li.appendChild(offerBtn);
+
+  return li;
+}
+
 // Replace with your Alchemy API key:
 const apiKey = "kwsMzj1VR4HA96zyzSIDg6lqSV2NU4ho";
 // Setup request options:
@@ -23,12 +61,12 @@ const requestOptions = {
   method: "GET",
   redirect: "follow",
 };
+const whiteListContractAddr = ["0x3a1e7aba44bf21a66344d7a0f795a7df0b49ed60", "0x06c586b4a9f95d6480cf6ab66ae16c3a391d7f02"]; // doggie and XENft address
 
 async function getNfts(ownerAddr) {
   // e.g. getNfts("0xF5FFF32CF83A1A614e15F25Ce55B0c0A6b5F8F2c")
   // const baseURL = `https://eth-mainnet.g.alchemy.com/nft/v2/${apiKey}/getNFTs/`;
   const baseURL = `https://eth-goerli.g.alchemy.com/nft/v2/${apiKey}/getNFTs/`;
-  const whiteListContractAddr = ["0x3a1e7aba44bf21a66344d7a0f795a7df0b49ed60", "0x06c586b4a9f95d6480cf6ab66ae16c3a391d7f02"]; // doggie and XENft address
   const withMetadata = true;
   const fetchURL = `${baseURL}?owner=${ownerAddr}&withMetadata=${withMetadata}&contractAddresses[]=${whiteListContractAddr}`;
   console.log(fetchURL, requestOptions);

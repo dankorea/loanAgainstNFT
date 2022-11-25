@@ -13,6 +13,7 @@
 
   <script type="module" src="./js/basic.mjs"></script>
   <script type="module" src="./js/init.mjs"></script>
+  <script type="module" src="./js/step0.mjs"></script>
   <script type="module" src="./js/step1.mjs"></script>
   <script type="module" src="./js/step2.mjs"></script>
   <title>Loan Test Page</title>
@@ -33,6 +34,26 @@
 
   <main id="main" class="hidden">
     <div class="my-4">
+
+      <div class="ml-2 border-b-gray-600">
+        <span class="text-2xl font-mono font-bold">Step 0 </span>
+        <span class="font-light">Loanable NFT</span>
+      </div>
+      <div class="flex justify-around">
+        <label for="allowingNft" class="mr-2 w-24 inline-block text-right">nft being allowed</label>
+        <input class="w-48 py-1 px-2 ring-1 rounded-md focus:ring-3 focus:ring-blue-300 underline-dark-200" type="text"
+          id="allowingNft" />
+      </div>
+      <div class="flex justify-around">
+        <button id="addAllowedBtn" class="bg-blue-700 text-white rounded-lg p-2">add allowed NFT</button>
+      </div>
+      <div>
+        <span class="font-light">----</span>
+      </div>
+      <div class="flex justify-around">
+        <button id="showLoanableBtn" class="bg-blue-700 text-white rounded-lg p-2">show loanable NFT</button>
+      </div>
+
       <div class="ml-2 border-b-gray-600">
         <span class="text-2xl font-mono font-bold">Step 1 </span>
         <span class="font-light">NFT escrow</span>
