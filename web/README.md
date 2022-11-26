@@ -8,4 +8,5 @@ Then refresh web browser with url `http://localhost:8000`
 
 contract upgrade: updateAllowedNfts(), getAllowedNfts() return(whitelist), collectionOffer(), packageOffer()
 security upgrade: reentry problem, contract proxy
+pricefeed: new contract
 
