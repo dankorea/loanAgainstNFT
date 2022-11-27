@@ -1,16 +1,12 @@
+import { getEscrow } from "./contract.mjs";
 
 async function addAllowedClicked() {
     const user = window.userAddress;
-    const chainId = await web3.eth.net.getId();
-    const networkMapping = await inputJsonFile("../conf/map.json");
-    const escrowAddress = networkMapping[chainId]["Escrow"][0];
-    const escrowJson = await inputJsonFile("../contracts/Escrow.json");
-    const escrowContract = new web3.eth.Contract(escrowJson.abi, escrowAddress);
-
-    const allowingNftAddress = document.getElementById("allowingNft").value;
-    if (allowingNftAddress && escrowContract) {
+    const { escrowAddress, escrowContract } = await getEscrow();
+    const updatingNftAddress = document.getElementById("updatingNft").value;
+    if (updatingNftAddress && escrowContract) {
         try {
-            const resp = await escrowContract.methods.addAllowedNfts(allowingNftAddress).send({ "from": user });
+            await escrowContract.methods.updateAllowedNfts(updatingNftAddress, true).send({ "from": user });
 
         } catch (e) {
             console.log("add allowed nft error!", e);
@@ -23,6 +19,26 @@ document.getElementById("addAllowedBtn").addEventListener("click", async () => {
     console.log("add allowed nft btn clicked")
 });
 
+async function delAllowedClicked() {
+    const user = window.userAddress;
+
+    const { escrowAddress, escrowContract } = await getEscrow();
+    const updatingNftAddress = document.getElementById("updatingNft").value;
+
+    if (updatingNftAddress && escrowContract) {
+        try {
+            await escrowContract.methods.updateAllowedNfts(updatingNftAddress, false).send({ "from": user });
+
+        } catch (e) {
+            console.log("del allowed nft error!", e);
+        };
+        console.log("allowed nft deleted!");
+    };
+};
+document.getElementById("delAllowedBtn").addEventListener("click", async () => {
+    await delAllowedClicked();
+    console.log("del allowed nft btn clicked")
+});
 
 async function showLoanableClicked() {
     const user = window.userAddress;
@@ -47,4 +63,4 @@ document.getElementById("showLoanableBtn").addEventListener("click", async () =>
 
 });
 
-export { showLoanableClicked }
+export { showLoanableClicked, addAllowedClicked, delAllowedClicked }

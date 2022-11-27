@@ -3,12 +3,38 @@ from brownie import DappToken, Escrow, SimpleNFT, network, config
 from web3 import Web3
 import time
 
+import yaml
+import json
+import os
+import shutil
+
 sample_token_uri = (
     "ipfs://Qmd9MCGtdVz2miNumBHDbvj8bigSgTwnr4SbyH6DNnpWdt?filename=0-PUG.json"
 )
 
 KEPT_BALANCE = Web3.toWei(1000, "ether")
-KEPT_LOAT_BALANCE = Web3.toWei(0.05, "ether")
+KEPT_LOAT_BALANCE = Web3.toWei(0.06, "ether")
+
+
+def update_front_end():
+    # sending the build folder
+    src = "./build"
+    # dest = "./front_end/src/chain-info"
+    dest = "../loanAgainstNFT/contracts"
+
+    copy_folders_to_front_end(src, dest)
+    # # sending the front end our config in JSON format
+    # with open("brownie-config.yaml", "r") as brownie_config:
+    #     config_dict = yaml.load(brownie_config, Loader=yaml.FullLoader)
+    #     with open("./front_end/src/brownie-config.json", "w") as brownie_config_json:
+    #         json.dump(config_dict, brownie_config_json)
+    # print("front end updated")
+
+
+def copy_folders_to_front_end(src, dest):
+    if os.path.exists(dest):
+        shutil.rmtree(dest)
+    shutil.copytree(src, dest)
 
 
 def deploy_escrow_and_tokens_and_nfts():
@@ -33,6 +59,7 @@ def deploy_escrow_and_tokens_and_nfts():
     loan_token = get_contract("loan_token")
     loan_token_price_feed = get_contract("loan_token_price_feed")
     init_amount = loan_token.balanceOf(account.address) - KEPT_LOAT_BALANCE
+    print(init_amount)
     loan_token.approve(escrow.address, init_amount, {"from": account})
     tx = loan_token.transfer(
         escrow.address,
@@ -45,11 +72,11 @@ def deploy_escrow_and_tokens_and_nfts():
     print(escrow.numOfNftStaked(account))
     # loan_token: weth, simple_nft, a_nft - doggie3, b_nft - doggie1
     # pricefeed: loan_token - eth/usd,simple_nft - eth/usd, a_nft - dai/usd, b_nft - btc/usd
-    # a_nft = get_contract("a_nft")
+    a_nft = get_contract("a_nft")
     # b_nft = get_contract("b_nft")
     dict_of_allowed_nfts = {
         simple_nft: get_contract("simple_nft_price_feed"),
-        # a_nft: get_contract("a_nft_price_feed"),
+        a_nft: get_contract("a_nft_price_feed"),
         # b_nft: get_contract("b_nft_price_feed"),
     }
     add_allowed_nfts(escrow, dict_of_allowed_nfts, account)
@@ -71,7 +98,7 @@ def deploy_escrow_and_tokens_and_nfts():
     )
     tx.wait(1)
 
-    loan_Amount = Web3.toWei(0.04, "ether")
+    loan_Amount = Web3.toWei(0.01, "ether")
     loan_Days = 3
     loan_Interest = 28
     escrow.setOffers(
@@ -124,10 +151,21 @@ def deploy_escrow_and_tokens_and_nfts():
     print(loan_token.balanceOf(escrow.address))
     print(escrow.numOfNftStaked(account))
 
+    print(escrow.allowedNfts(0))
+    print(escrow.allowedNfts(1))
+    print(escrow.numOfAllowedNfts())
+    tx = escrow.updateAllowedNfts(simple_nft.address, False, {"from": account})
+    tx.wait(1)
+    print(escrow.allowedNfts(0))
+    print(escrow.numOfAllowedNfts())
+
+    # return escrow, simple_nft, dapp_token, loan_token
+
 
 def add_allowed_nfts(escrow, dict_of_allowed_nfts, account):
+    update = True
     for nft in dict_of_allowed_nfts:
-        add_tx = escrow.addAllowedNfts(nft.address, {"from": account})
+        add_tx = escrow.updateAllowedNfts(nft.address, update, {"from": account})
         add_tx.wait(1)
         set_tx = escrow.setPriceFeedContract(
             nft.address, dict_of_allowed_nfts[nft], {"from": account}
@@ -137,3 +175,4 @@ def add_allowed_nfts(escrow, dict_of_allowed_nfts, account):
 
 def main():
     deploy_escrow_and_tokens_and_nfts()
+    # update_front_end()

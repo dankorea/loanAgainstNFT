@@ -23,6 +23,7 @@ import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
 contract Escrow is Ownable {
     address[] public allowedNfts;
+    uint256 public numOfAllowedNfts;
     mapping(address => address) public nftPriceFeedMapping; // need to upgraded to ranks
     address lender;
     address inspector;
@@ -57,6 +58,7 @@ contract Escrow is Ownable {
 
     constructor(address _dappTokenAddress) public {
         dappToken = IERC20(_dappTokenAddress);
+        numOfAllowedNfts = 0;
     }
 
     function loanRepay(address _loanTokenAddress, uint256 _repayAmount) public {
@@ -184,8 +186,57 @@ contract Escrow is Ownable {
         );
     }
 
-    function addAllowedNfts(address _nftAddress) public onlyOwner {
+    function addAllowedNfts(address _nftAddress)
+        internal
+        onlyOwner
+        returns (bool)
+    {
+        for (
+            uint256 allowedNftsIndex = 0;
+            allowedNftsIndex < allowedNfts.length;
+            allowedNftsIndex++
+        ) {
+            if (allowedNfts[allowedNftsIndex] == _nftAddress) {
+                return false;
+            }
+        }
         allowedNfts.push(_nftAddress);
+        numOfAllowedNfts = numOfAllowedNfts + 1;
+        return true;
+    }
+
+    function delAllowedNfts(address _nftAddress)
+        internal
+        onlyOwner
+        returns (bool)
+    {
+        for (
+            uint256 allowedNftsIndex = 0;
+            allowedNftsIndex < allowedNfts.length;
+            allowedNftsIndex++
+        ) {
+            if (allowedNfts[allowedNftsIndex] == _nftAddress) {
+                allowedNfts[allowedNftsIndex] = allowedNfts[
+                    allowedNfts.length - 1
+                ];
+                allowedNfts.pop();
+                numOfAllowedNfts = numOfAllowedNfts - 1;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function updateAllowedNfts(address _nftAddress, bool _update)
+        public
+        onlyOwner
+        returns (bool)
+    {
+        if (_update == true) {
+            return addAllowedNfts(_nftAddress);
+        } else {
+            return delAllowedNfts(_nftAddress);
+        }
     }
 
     function nftIsAllowed(address _nftAddress) public view returns (bool) {
@@ -200,6 +251,8 @@ contract Escrow is Ownable {
         }
         return false;
     }
+
+    // function getAllowedNfts() public view returns(address []){}
 
     function isBorrowers(address _user) public view returns (bool) {
         for (uint256 index = 0; index < allowedNfts.length; index++) {

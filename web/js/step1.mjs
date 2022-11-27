@@ -1,48 +1,19 @@
 
 
-import { getTokenContract } from "./contract.mjs";
+import { getLoanToken, getEscrow } from "./contract.mjs";
 
-const brownie_config = await inputJsonFile("../conf/brownie-config.json");
-const helper_config = await inputJsonFile("../conf/helper-config.json");
-const chainId = await web3.eth.net.getId();
-const networkMapping = await inputJsonFile("../conf/map.json");
-// // 1. LOANT as loan token
-// const tokenAddress = networkMapping[chainId]["LoanToken"][0];
-// 2. WETH as loan token
-const networkName = helper_config[chainId];
-const tokenAddress = brownie_config["networks"][networkName]["loan_token"];
-const tokenJson = await inputJsonFile("../contracts/MockLoanToken.json");
-const tokenContract = new web3.eth.Contract(tokenJson.abi, tokenAddress);
 
-// const nftAddress = networkMapping[chainId]["SimpleNFT"][0];
-// const nftAddress = "0x3a1e7aba44bf21a66344d7a0f795a7df0b49ed60"; // the XENFT
 const nftAddress = "0x06c586b4a9f95d6480cf6ab66ae16c3a391d7f02"; // many doggies
 const nftJson = await inputJsonFile("../contracts/SimpleNFT.json");
-const nftContract = new web3.eth.Contract(nftJson.abi, nftAddress);
 const nftId = "2"; //30930";
-const escrowAddress = networkMapping[chainId]["Escrow"][0];
-const escrowJson = await inputJsonFile("../contracts/Escrow.json");
-const escrowContract = new web3.eth.Contract(escrowJson.abi, escrowAddress);
 
-async function getNftBalance(user) {
-  const nftContract = await getTokenContract(nftJson, nftAddress);
-  return await nftContract.methods.balanceOf(user).call();
-}
+
+
 async function getTokenBalance(user) {
-  const tokenContract = await getTokenContract(tokenJson, tokenAddress);
+  const { tokenAddress, tokenContract } = await getLoanToken();
   return await tokenContract.methods.balanceOf(user).call();
 }
 
-async function checkNftApprove() {
-  // const tokenContract = await getTokenContract();
-  // tokenContract.methods.allowance.call();
-}
-
-async function getNftUri(nftId) {
-  const nftContract = await getTokenContract(nftJson, nftAddress);
-
-  return await nftContract.methods.tokenURI(nftId).call(); //???
-}
 
 
 async function checkClicked() {
@@ -66,6 +37,14 @@ document
 
 async function approveClicked() {
   const user = window.userAddress;
+
+
+  const { escrowAddress, escrowContract } = await getEscrow();
+  const nftContract = new web3.eth.Contract(nftJson.abi, nftAddress);
+  console.log(escrowAddress);
+  console.log(nftAddress);
+  console.log(nftId);
+  console.log(nftContract);
   try {
     const resp = await nftContract.methods.approve(escrowAddress, nftId).send({ "from": user });
   } catch (e) {
@@ -90,6 +69,9 @@ async function borrowClicked() {
   const loanPeriod = document.getElementById("loanPeriod").value;
   const loanInterest = document.getElementById("loanInterest").value; //???
 
+  const { tokenAddress, tokenContract } = await getLoanToken();
+  const { escrowAddress, escrowContract } = await getEscrow();
+
   try {
     const resp = await escrowContract.methods.nftStaking(nftAddress, nftId).send({ "from": user });
   } catch (e) {
@@ -101,6 +83,7 @@ async function borrowClicked() {
   } catch (e) {
     console.log("loan approval error!", e);
   }
+  console.log(escrowAddress);
   console.log("loan transferred!");
 
   const loanStartTime = Math.floor(Date.now() / 1000.0);

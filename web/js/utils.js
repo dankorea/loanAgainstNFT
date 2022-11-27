@@ -61,19 +61,24 @@ const requestOptions = {
   method: "GET",
   redirect: "follow",
 };
-const whiteListContractAddr = ["0x3a1e7aba44bf21a66344d7a0f795a7df0b49ed60", "0x06c586b4a9f95d6480cf6ab66ae16c3a391d7f02"]; // doggie and XENft address
+// const whiteListContractAddr = ["0x3a1e7aba44bf21a66344d7a0f795a7df0b49ed60", "0x06c586b4a9f95d6480cf6ab66ae16c3a391d7f02"]; // doggie and XENft address
 // ??? need contract upgrade to get allowedNfts by function
 
 async function getNfts(ownerAddr) {
-  // const user = window.userAddress;
-  // const chainId = await web3.eth.net.getId();
-  // const networkMapping = await inputJsonFile("../conf/map.json");
-  // const escrowAddress = networkMapping[chainId]["Escrow"][0];
-  // const escrowJson = await inputJsonFile("../contracts/Escrow.json");
-  // const escrowContract = new web3.eth.Contract(escrowJson.abi, escrowAddress);
+  const user = window.userAddress;
+  const chainId = await web3.eth.net.getId();
+  const networkMapping = await inputJsonFile("../conf/map.json");
+  const escrowAddress = networkMapping[chainId]["Escrow"][0];
+  const escrowJson = await inputJsonFile("../contracts/Escrow.json");
+  const escrowContract = new web3.eth.Contract(escrowJson.abi, escrowAddress);
+  const numOfAllowedNfts = await escrowContract.methods.numOfAllowedNfts().call({ "from": user });
+  let whiteListContractAddr = [];
+  for (let i = 0; i < numOfAllowedNfts; i++) {
+    whiteListContractAddr[i] = await escrowContract.methods.allowedNfts(i).call({ "from": user });
+  }
 
   // const allowedNfts = await escrowContract.methods.allowedNfts().call({ "from": user });
-  // console.log(allowedNfts);
+  console.log(whiteListContractAddr);
 
   // const baseURL = `https://eth-mainnet.g.alchemy.com/nft/v2/${apiKey}/getNFTs/`;
   const baseURL = `https://eth-goerli.g.alchemy.com/nft/v2/${apiKey}/getNFTs/`;

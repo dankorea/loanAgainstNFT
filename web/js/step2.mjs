@@ -1,38 +1,10 @@
-import { getTokenContract } from "./contract.mjs";
+import { getEscrow, getLoanToken } from "./contract.mjs";
 
-const brownie_config = await inputJsonFile("../conf/brownie-config.json");
-const helper_config = await inputJsonFile("../conf/helper-config.json");
-const chainId = await web3.eth.net.getId();
-const networkMapping = await inputJsonFile("../conf/map.json");
-
-// // 1. LOANT as loan token
-// const networkMapping = await inputJsonFile("../contracts/map.json");
-// const tokenAddress = networkMapping[chainId]["LoanToken"][0];
-// 2. WETH as loan token
-const networkName = helper_config[chainId];
-const tokenAddress = brownie_config["networks"][networkName]["loan_token"];
-const tokenJson = await inputJsonFile("../contracts/MockLoanToken.json");
-const tokenContract = await getTokenContract(tokenJson, tokenAddress);
-
-const escrowAddress = networkMapping[chainId]["Escrow"][0];
-const escrowJson = await inputJsonFile("../contracts/Escrow.json");
-const escrowContract = new web3.eth.Contract(escrowJson.abi, escrowAddress);
-
-
-console.log(chainId)
-
-async function getTokenBalance(user) {
-  return await tokenContract.methods.balanceOf(user).call();
-}
-
-async function checkNftApprove() {
-  // const tokenContract = await getTokenContract();
-  // tokenContract.methods.allowance.call();
-}
 
 async function checkClicked() {
   const user = window.userAddress;
 
+  const { escrowAddress, escrowContract } = await getEscrow();
   const stakedNftAddress = await escrowContract.methods.stakedNftAddress(user, 0).call({ "from": user });
   console.log(stakedNftAddress);
   document.getElementById("stakedNftAddress").value = stakedNftAddress;
@@ -52,6 +24,9 @@ async function approveClicked() {
   const stakedNftAddress = document.getElementById("stakedNftAddress").value;
   const stakedNftId = document.getElementById("stakedNftId").value;
 
+  const { tokenAddress, tokenContract } = await getLoanToken();
+  const { escrowAddress, escrowContract } = await getEscrow();
+
   const redeemInfo = await escrowContract.methods.getNftLockData(stakedNftAddress, stakedNftId).call({ "from": user });
   const redeemAmount = redeemInfo[2];
   // const { redeemAddress, redeemDeadline, redeemAmount } = await escrowContract.methods.getNftLockData(stakedNftAddress, stakedNftId).call({ "from": user });
@@ -60,11 +35,11 @@ async function approveClicked() {
   document.getElementById("redeemAmount").value = redeemAmount;
   document.getElementById("redeemDeadline").value = redeemInfo[1];
 
-  const balance = await getTokenBalance(user);
+  const balance = await tokenContract.methods.balanceOf(user).call();
   console.log(balance);
   document.getElementById("tokenBalance").innerText = balance;
 
-  if (getTokenBalance < redeemAmount) {
+  if (balance < redeemAmount) {
     return alert("not enough token to repay!")
   };
 
@@ -85,6 +60,8 @@ document.getElementById("approveTokenBtn").addEventListener("click", async () =>
 async function repayClicked() {
   const user = window.userAddress;
   const redeemAmount = document.getElementById("redeemAmount").value;
+  const { tokenAddress, tokenContract } = await getLoanToken();
+  const { escrowAddress, escrowContract } = await getEscrow();
 
   try {
     const resp = await escrowContract.methods.loanRepay(tokenAddress, redeemAmount).send({ "from": user });
@@ -103,6 +80,9 @@ async function unStakingClicked() {
   const user = window.userAddress;
   const stakedNftAddress = document.getElementById("stakedNftAddress").value;
   const stakedNftId = document.getElementById("stakedNftId").value;
+
+  const { escrowAddress, escrowContract } = await getEscrow();
+
 
   try {
     const resp = await escrowContract.methods.nftUnStaking(stakedNftAddress, stakedNftId).send({ "from": user });
