@@ -8,5 +8,6 @@ Then refresh web browser with url `http://localhost:8000`
 
 contract upgrade: collectionOffer(), packageOffer()
 security upgrade: reentry problem, contract proxy
+experience upgrade: smoothing process
 pricefeed: new contract
 

@@ -46,6 +46,7 @@ contract Escrow is Ownable {
         public stakedNftIndex;
     mapping(address => uint256) public numOfNftStaked;
     address[] public borrowers;
+    uint256 public numOfBorrowers;
     mapping(address => uint256) public borrowerIndex;
     // mapping nft address -> nft id -> { expireTime, repayAmount, holderAddress}
     mapping(address => mapping(uint256 => uint256)) public nftLoanRepayAmount;
@@ -95,9 +96,11 @@ contract Escrow is Ownable {
         IERC721(_nftAddress).transferFrom(address(this), msg.sender, _nftId);
         uint256 index = stakedNftIndex[msg.sender][_nftAddress][_nftId];
         address nft_address = stakedNftAddress[msg.sender][
-            numOfNftStaked[msg.sender]
+            numOfNftStaked[msg.sender] - 1
         ];
-        uint256 nft_id = stakedNftId[msg.sender][numOfNftStaked[msg.sender]];
+        uint256 nft_id = stakedNftId[msg.sender][
+            numOfNftStaked[msg.sender] - 1
+        ];
         stakedNftAddress[msg.sender][index] = nft_address;
         stakedNftId[msg.sender][index] = nft_id;
         stakedNftIndex[msg.sender][nft_address][nft_id] = index;
@@ -108,6 +111,7 @@ contract Escrow is Ownable {
             borrowers[index] = borrowers[borrowers.length - 1];
             borrowerIndex[borrowers[index]] = index;
             borrowers.pop();
+            numOfBorrowers = numOfBorrowers - 1;
         }
     }
 
@@ -126,6 +130,7 @@ contract Escrow is Ownable {
         if (numOfNftStaked[msg.sender] == 0) {
             borrowers.push(msg.sender);
             borrowerIndex[msg.sender] = borrowers.length - 1;
+            numOfBorrowers = numOfBorrowers + 1;
         }
         numOfNftStaked[msg.sender] = numOfNftStaked[msg.sender] + 1;
     }
