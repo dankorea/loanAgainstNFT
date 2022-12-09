@@ -56,6 +56,10 @@ contract Escrow is Ownable {
     mapping(address => mapping(uint256 => uint256)) public nftLoanAmount; // unit: wei
     mapping(address => mapping(uint256 => uint256)) public nftLoanPeriod; // unit: days
     mapping(address => mapping(uint256 => uint256)) public nftLoanInterest; // decimals: 4
+    // mapping nft address -> { loanPeriod, loanAmount, loanInterest}
+    mapping(address => uint256) nftCollectionLoanAmount; // unit: wei
+    mapping(address => uint256) nftCollectionLoanPeriod; // unit: days
+    mapping(address => uint256) nftCollectionLoanInterest; // decimals: 4
 
     constructor(address _dappTokenAddress) public {
         dappToken = IERC20(_dappTokenAddress);
@@ -75,12 +79,96 @@ contract Escrow is Ownable {
         address _loanTokenAddress,
         address _nftHolderAddress,
         uint256 _loanAmount
+    ) internal {
+        // is onlyOwner used here correct?
+        IERC20(_loanTokenAddress).transfer(_nftHolderAddress, _loanAmount);
+    }
+
+    function loanMTransfer(
+        address _loanTokenAddress,
+        address _nftHolderAddress,
+        uint256 _loanAmount
     ) public onlyOwner {
         // is onlyOwner used here correct?
         IERC20(_loanTokenAddress).transfer(_nftHolderAddress, _loanAmount);
     }
 
-    function nftUnStaking(address _nftAddress, uint256 _nftId)
+    function requestLoan(
+        address _loanTokenAddress,
+        address _nftAddress,
+        uint256 _nftId,
+        uint256 _loanAmount,
+        uint256 _loanDays,
+        uint256 _loanInterest
+    ) public {
+        require(
+            nftIsAllowed(_nftAddress),
+            "current nft is not allowed in our whitelist!"
+        );
+        nftStaking(_nftAddress, _nftId);
+        loanTransfer(_loanTokenAddress, address(msg.sender), _loanAmount);
+        // IERC20(_loanTokenAddress).transfer(address(msg.sender), _loanAmount);
+        uint256 initTime = block.timestamp;
+        uint256 expireTime = initTime + _loanDays * 24 * 60 * 60;
+        uint256 repayAmount = _loanAmount *
+            (1 + _loanInterest / (10**interestDecimals));
+        nftLock(
+            _nftAddress,
+            _nftId,
+            address(msg.sender),
+            expireTime,
+            repayAmount
+        );
+    }
+
+    function nftStaking(address _nftAddress, uint256 _nftId) public {
+        require(
+            nftIsAllowed(_nftAddress),
+            "current nft is not allowed in our whitelist!"
+        );
+        IERC721(_nftAddress).transferFrom(msg.sender, address(this), _nftId);
+        stakedNftAddress[msg.sender][numOfNftStaked[msg.sender]] = _nftAddress;
+        stakedNftId[msg.sender][numOfNftStaked[msg.sender]] = _nftId;
+        stakedNftIndex[msg.sender][_nftAddress][_nftId] = numOfNftStaked[
+            msg.sender
+        ];
+        if (numOfNftStaked[msg.sender] == 0) {
+            borrowers.push(msg.sender);
+            borrowerIndex[msg.sender] = borrowers.length - 1;
+            numOfBorrowers = numOfBorrowers + 1;
+        }
+        numOfNftStaked[msg.sender] = numOfNftStaked[msg.sender] + 1;
+    }
+
+    function nftUnStaking(address _nftAddress, uint256 _nftId) internal {
+        require(
+            nftIsAllowed(_nftAddress),
+            "current nft is not allowed in our whitelist!"
+        );
+
+        IERC721(_nftAddress).transferFrom(address(this), msg.sender, _nftId);
+        uint256 index = stakedNftIndex[msg.sender][_nftAddress][_nftId];
+        address nft_address = stakedNftAddress[msg.sender][
+            numOfNftStaked[msg.sender] - 1
+        ];
+        uint256 nft_id = stakedNftId[msg.sender][
+            numOfNftStaked[msg.sender] - 1
+        ];
+        stakedNftAddress[msg.sender][index] = nft_address;
+        stakedNftId[msg.sender][index] = nft_id;
+        stakedNftIndex[msg.sender][nft_address][nft_id] = index;
+        numOfNftStaked[msg.sender] = numOfNftStaked[msg.sender] - 1;
+
+        if (numOfNftStaked[msg.sender] == 0) {
+            index = borrowerIndex[msg.sender];
+            borrowers[index] = borrowers[borrowers.length - 1];
+            borrowerIndex[borrowers[index]] = index;
+            borrowers.pop();
+            numOfBorrowers = numOfBorrowers - 1;
+        }
+    }
+
+    function nftMUnStaking(address _nftAddress, uint256 _nftId)
         public
         onlyOwner
     {
@@ -115,26 +203,6 @@ contract Escrow is Ownable {
         }
     }
 
-    function nftStaking(address _nftAddress, uint256 _nftId) public {
-        // what NFT can they stake?
-        require(
-            nftIsAllowed(_nftAddress),
-            "current nft is not allowed in our whitelist!"
-        );
-        IERC721(_nftAddress).transferFrom(msg.sender, address(this), _nftId);
-        stakedNftAddress[msg.sender][numOfNftStaked[msg.sender]] = _nftAddress;
-        stakedNftId[msg.sender][numOfNftStaked[msg.sender]] = _nftId;
-        stakedNftIndex[msg.sender][_nftAddress][_nftId] = numOfNftStaked[
-            msg.sender
-        ];
-        if (numOfNftStaked[msg.sender] == 0) {
-            borrowers.push(msg.sender);
-            borrowerIndex[msg.sender] = borrowers.length - 1;
-            numOfBorrowers = numOfBorrowers + 1;
-        }
-        numOfNftStaked[msg.sender] = numOfNftStaked[msg.sender] + 1;
-    }
-
     function setOffers(
         address _nftAddress,
         uint256 _nftId,
@@ -145,6 +213,17 @@ contract Escrow is Ownable {
         nftLoanAmount[_nftAddress][_nftId] = _loanAmount;
         nftLoanInterest[_nftAddress][_nftId] = _loanInterest;
         nftLoanPeriod[_nftAddress][_nftId] = _loanPeriod;
+    }
+
+    function setCollectionOffers(
+        address _nftAddress,
+        uint256 _loanAmount,
+        uint256 _loanPeriod,
+        uint256 _loanInterest
+    ) public onlyOwner {
+        nftCollectionLoanAmount[_nftAddress] = _loanAmount;
+        nftCollectionLoanInterest[_nftAddress] = _loanInterest;
+        nftCollectionLoanPeriod[_nftAddress] = _loanPeriod;
     }
 
     function getOffers(address _nftAddress, uint256 _nftId)
@@ -287,33 +366,6 @@ contract Escrow is Ownable {
         return address(this).balance;
     }
 
-    // function requestLoan(
-    //     address _loanTokenAddress,
-    //     address _nftAddress,
-    //     uint256 _nftId,
-    //     uint256 _loanAmount,
-    //     uint256 _loanDays,
-    //     uint256 _loanInterest
-    // ) public {
-    //     require(
-    //         nftIsAllowed(_nftAddress),
-    //         "current nft is not allowed in our whitelist!"
-    //     );
-    //     nftStaking(_nftAddress, _nftId);
-    //     IERC20(_loanTokenAddress).transfer(address(msg.sender), _loanAmount);
-    //     uint256 initTime = block.timestamp;
-    //     uint256 expireTime = initTime + _loanDays * 24 * 60 * 60;
-    //     uint256 repayAmount = _loanAmount *
-    //         (1 + _loanInterest / (10**interestDecimals));
-    //     nftLock(
-    //         _nftAddress,
-    //         _nftId,
-    //         address(msg.sender),
-    //         expireTime,
-    //         repayAmount
-    //     );
-    // }
-
     // e.g.: give 1 DappToken per loanToken loan
     function issueTokens() public onlyOwner {
         // ? get each borrower total loan interest profit
@@ -326,7 +378,12 @@ contract Escrow is Ownable {
         }
     }
 
-    function getUserTotalValue(address _user) public view returns (uint256) {
+    function getUserTotalValue(address _user)
+        public
+        view
+        onlyOwner
+        returns (uint256)
+    {
         uint256 totalValue = 0;
         // require(numOfNftStaked[_user] > 0, "No nft staked!");
         if (numOfNftStaked[_user] <= 0) {
@@ -352,7 +409,7 @@ contract Escrow is Ownable {
         address _user,
         address _nftAddress,
         uint256 _nftId
-    ) public view returns (uint256) {
+    ) internal view returns (uint256) {
         if (numOfNftStaked[_user] <= 0) {
             return 0;
         }
@@ -364,7 +421,7 @@ contract Escrow is Ownable {
     }
 
     function getNftValue(address _nftAddress, uint256 _nftId)
-        public
+        internal
         view
         returns (uint256, uint256)
     {
