@@ -3,9 +3,9 @@
 import { getLoanToken, getEscrow } from "./contract.mjs";
 
 
-const nftAddress = "0x06c586b4a9f95d6480cf6ab66ae16c3a391d7f02"; // many doggies
+const nftAddress = "0xca3983f05322ab4ba0d7225867736d13dcaa3d15"; // many doggies
 const nftJson = await inputJsonFile("../contracts/SimpleNFT.json");
-const nftId = "2"; //30930";
+const nftId = "1"; //30930";
 
 
 
@@ -73,36 +73,43 @@ async function borrowClicked() {
   const { escrowAddress, escrowContract } = await getEscrow();
 
   try {
-    const resp = await escrowContract.methods.nftStaking(nftAddress, nftId).send({ "from": user });
+    const resp = await escrowContract.methods.requestLoan(tokenAddress, nftAddress, nftId, loanAmount, loanPeriod, loanInterest).send({ "from": user });
   } catch (e) {
-    console.log("nft staking error!", e);
+    console.log("request loan error!", e);
   }
-  console.log("nft staked!");
-  try {
-    const resp = await escrowContract.methods.loanTransfer(tokenAddress, user, loanAmount).send({ "from": user });
-  } catch (e) {
-    console.log("loan approval error!", e);
-  }
-  console.log(escrowAddress);
-  console.log("loan transferred!");
+  console.log("loan requested!");
 
-  const loanStartTime = Math.floor(Date.now() / 1000.0);
-  const expireTime = loanStartTime + loanPeriod * 24 * 60 * 60;
-  const repayAmount = loanAmount * (1 + loanInterest / 10000);
-  // console.log(typeof (repayAmount));
-  // console.log(loanStartTime);
-  // console.log(expireTime);
-  // console.log(repayAmount);
-  try {
-    const resp = await escrowContract.methods.nftLock(nftAddress, nftId, user, expireTime, repayAmount.toString()).send({ "from": user });
-  } catch (e) {
-    console.log("nft lock error!", e);
-  }
-  console.log("nft locked!");
+  // try {
+  //   const resp = await escrowContract.methods.nftStaking(nftAddress, nftId).send({ "from": user });
+  // } catch (e) {
+  //   console.log("nft staking error!", e);
+  // }
+  // console.log("nft staked!");
+  // try {
+  //   const resp = await escrowContract.methods.loanTransfer(tokenAddress, user, loanAmount).send({ "from": user });
+  // } catch (e) {
+  //   console.log("loan approval error!", e);
+  // }
+  // console.log(escrowAddress);
+  // console.log("loan transferred!");
 
-  document.getElementById("repayAddress").value = user;
-  document.getElementById("repayAmount").value = repayAmount;
-  document.getElementById("expireTime").value = expireTime;
+  // const loanStartTime = Math.floor(Date.now() / 1000.0);
+  // const expireTime = loanStartTime + loanPeriod * 24 * 60 * 60;
+  // const repayAmount = loanAmount * (1 + loanInterest / 10000);
+  // // console.log(typeof (repayAmount));
+  // // console.log(loanStartTime);
+  // // console.log(expireTime);
+  // // console.log(repayAmount);
+  // try {
+  //   const resp = await escrowContract.methods.nftLock(nftAddress, nftId, user, expireTime, repayAmount.toString()).send({ "from": user });
+  // } catch (e) {
+  //   console.log("nft lock error!", e);
+  // }
+  // console.log("nft locked!");
+
+  // document.getElementById("repayAddress").value = user;
+  // document.getElementById("repayAmount").value = repayAmount;
+  // document.getElementById("expireTime").value = expireTime;
 
 
 };

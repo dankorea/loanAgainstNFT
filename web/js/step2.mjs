@@ -27,13 +27,13 @@ async function approveClicked() {
   const { tokenAddress, tokenContract } = await getLoanToken();
   const { escrowAddress, escrowContract } = await getEscrow();
 
-  const redeemInfo = await escrowContract.methods.getNftLockData(stakedNftAddress, stakedNftId).call({ "from": user });
-  const redeemAmount = redeemInfo[2];
+  const redeemAmount = await escrowContract.methods.nftLoanRepayAmount(stakedNftAddress, stakedNftId).call({ "from": user });
+  const redeemDeadline = await escrowContract.methods.nftLoanExpireTime(stakedNftAddress, stakedNftId).call({ "from": user });
   // const { redeemAddress, redeemDeadline, redeemAmount } = await escrowContract.methods.getNftLockData(stakedNftAddress, stakedNftId).call({ "from": user });
   // console.log(redeemAmount);
   // console.log(redeemDeadline);
   document.getElementById("redeemAmount").value = redeemAmount;
-  document.getElementById("redeemDeadline").value = redeemInfo[1];
+  document.getElementById("redeemDeadline").value = redeemDeadline;
 
   const balance = await tokenContract.methods.balanceOf(user).call();
   console.log(balance);
@@ -59,16 +59,19 @@ document.getElementById("approveTokenBtn").addEventListener("click", async () =>
 
 async function repayClicked() {
   const user = window.userAddress;
+  const stakedNftAddress = document.getElementById("stakedNftAddress").value;
+  const stakedNftId = document.getElementById("stakedNftId").value;
+
   const redeemAmount = document.getElementById("redeemAmount").value;
   const { tokenAddress, tokenContract } = await getLoanToken();
   const { escrowAddress, escrowContract } = await getEscrow();
 
   try {
-    const resp = await escrowContract.methods.loanRepay(tokenAddress, redeemAmount).send({ "from": user });
+    const resp = await escrowContract.methods.redeemLoan(tokenAddress, stakedNftAddress, stakedNftId).send({ "from": user });
   } catch (e) {
-    console.log("loan token repay error!", e);
+    console.log("loan redeem error!", e);
   };
-  console.log("loan token repayed!");
+  console.log("loan redeemed!");
 
 };
 document.getElementById("repayBtn").addEventListener("click", async () => {
@@ -77,19 +80,19 @@ document.getElementById("repayBtn").addEventListener("click", async () => {
 });
 
 async function unStakingClicked() {
-  const user = window.userAddress;
-  const stakedNftAddress = document.getElementById("stakedNftAddress").value;
-  const stakedNftId = document.getElementById("stakedNftId").value;
+  // const user = window.userAddress;
+  // const stakedNftAddress = document.getElementById("stakedNftAddress").value;
+  // const stakedNftId = document.getElementById("stakedNftId").value;
 
-  const { escrowAddress, escrowContract } = await getEscrow();
+  // const { escrowAddress, escrowContract } = await getEscrow();
 
 
-  try {
-    const resp = await escrowContract.methods.nftUnStaking(stakedNftAddress, stakedNftId).send({ "from": user });
-  } catch (e) {
-    console.log("nft unstaking error!", e);
-  };
-  console.log("nft unstaked!");
+  // try {
+  //   const resp = await escrowContract.methods.nftUnStaking(stakedNftAddress, stakedNftId).send({ "from": user });
+  // } catch (e) {
+  //   console.log("nft unstaking error!", e);
+  // };
+  // console.log("nft unstaked!");
 
 };
 document.getElementById("unStakingBtn").addEventListener("click", async () => {
