@@ -198,20 +198,18 @@ def loanProcess2(escrow, simple_nft, simple_nft_id, _account, loan_token):
 
 def repayProcess2(escrow, simple_nft, simple_nft_id, account, loan_token):
     time.sleep(1)
-    holder_address, expire_time, repay_amount = escrow.getNftLockData(
-        simple_nft.address, simple_nft_id, {"from": account}
+    # holder_address, expire_time, repay_amount = escrow.getNftLockData(
+    #     simple_nft.address, simple_nft_id, {"from": account}
+    # )
+    deposit_amount = escrow.nftLoanRepayAmount(simple_nft.address, simple_nft_id)
+    loan_token.approve(escrow.address, deposit_amount, {"from": account})
+    tx = escrow.redeemLoan(
+        loan_token.address,
+        simple_nft.address,
+        simple_nft_id,
+        {"from": account},
     )
-    deposit_amount = repay_amount
-    current_time = time.time()
-    if (holder_address == account.address) & (time.time() < expire_time):
-        loan_token.approve(escrow.address, deposit_amount, {"from": account})
-        tx = escrow.redeemLoan(
-            loan_token.address,
-            simple_nft.address,
-            simple_nft_id,
-            {"from": account},
-        )
-        tx.wait(1)
+    tx.wait(1)
 
 
 def loanProcess(escrow, simple_nft, simple_nft_id, account, loan_token):

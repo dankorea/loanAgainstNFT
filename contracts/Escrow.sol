@@ -25,17 +25,9 @@ contract Escrow is Ownable {
     address[] public allowedNfts;
     uint256 public numOfAllowedNfts;
     mapping(address => address) public nftPriceFeedMapping; // need to upgraded to ranks
-    address lender;
-    address inspector;
 
     IERC20 public dappToken;
 
-    struct loanOffer {
-        // struct may not be suggested, just use single variables
-        uint256 _loanAmount; //18 decimals in ether(wei)
-        uint256 _loanDays; // in days
-        uint256 _loanInterest; //with decimals 10**4, e.g. 2.83% = 283/(10**4)
-    }
     uint256 public interestDecimals = 4;
 
     // mapping borrower address -> borrower stake index -> staked NFT address and ID
@@ -56,7 +48,7 @@ contract Escrow is Ownable {
     mapping(address => mapping(uint256 => uint256)) public nftLoanAmount; // unit: wei
     mapping(address => mapping(uint256 => uint256)) public nftLoanPeriod; // unit: days
     mapping(address => mapping(uint256 => uint256)) public nftLoanInterest; // decimals: 4
-    // mapping nft address -> { loanPeriod, loanAmount, loanInterest}
+    // mapping nft address -> { loanPeriod, loanAmount, loanInterest} collection offer
     mapping(address => uint256) nftCollectionLoanAmount; // unit: wei
     mapping(address => uint256) nftCollectionLoanPeriod; // unit: days
     mapping(address => uint256) nftCollectionLoanInterest; // decimals: 4
@@ -66,7 +58,9 @@ contract Escrow is Ownable {
         numOfAllowedNfts = 0;
     }
 
-    function loanRepay(address _loanTokenAddress, uint256 _repayAmount) public {
+    function loanRepay(address _loanTokenAddress, uint256 _repayAmount)
+        internal
+    {
         // where shall we put approve action, here or in .py?
         IERC20(_loanTokenAddress).transferFrom(
             msg.sender,
@@ -105,10 +99,10 @@ contract Escrow is Ownable {
             nftIsAllowed(_nftAddress),
             "current nft is not allowed in our whitelist!"
         );
-        // require(
-        //     IERC20(_loanTokenAddress).balanceOf(this) >= _loanAmount,
-        //     "Current lender has not sufficient fund, please contact our staff~"
-        // );
+        require(
+            IERC20(_loanTokenAddress).balanceOf(address(this)) >= _loanAmount,
+            "Current lender has not sufficient fund, please contact our staff~"
+        );
         nftStaking(_nftAddress, _nftId);
         loanTransfer(_loanTokenAddress, address(msg.sender), _loanAmount);
         // IERC20(_loanTokenAddress).transfer(address(msg.sender), _loanAmount);
@@ -157,7 +151,7 @@ contract Escrow is Ownable {
         nftUnStaking(_nftAddress, _nftId);
     }
 
-    function nftStaking(address _nftAddress, uint256 _nftId) public {
+    function nftStaking(address _nftAddress, uint256 _nftId) internal {
         require(
             nftIsAllowed(_nftAddress),
             "current nft is not allowed in our whitelist!"
@@ -304,7 +298,7 @@ contract Escrow is Ownable {
     }
 
     function getNftLockData(address _nftAddress, uint256 _nftId)
-        public
+        internal
         view
         returns (
             address,
@@ -401,93 +395,6 @@ contract Escrow is Ownable {
         _;
     }
 
-    modifier onlyLender() {
-        require(msg.sender == lender, "Only lender can call this method");
-        _;
-    }
-
-    modifier onlyInspector() {
-        require(msg.sender == inspector, "Only inspector can call this method");
-        _;
-    }
-
-    function getBalance() public view returns (uint256) {
-        return address(this).balance;
-    }
-
-    // e.g.: give 1 DappToken per loanToken loan
-    function issueTokens() public onlyOwner {
-        // ? get each borrower total loan interest profit
-        // ? get each NFT (address, id) loaned interest profit
-        // Issue tokens to all stakers
-        for (uint256 index = 0; index < borrowers.length; index++) {
-            address recipient = borrowers[index];
-            uint256 userTotalValue = getUserTotalValue(recipient);
-            dappToken.transfer(recipient, userTotalValue);
-        }
-    }
-
-    function getUserTotalValue(address _user)
-        public
-        view
-        onlyOwner
-        returns (uint256)
-    {
-        uint256 totalValue = 0;
-        // require(numOfNftStaked[_user] > 0, "No nft staked!");
-        if (numOfNftStaked[_user] <= 0) {
-            return 0;
-        }
-        for (
-            uint256 nftStakedIndex = 0;
-            nftStakedIndex < numOfNftStaked[_user];
-            nftStakedIndex++
-        ) {
-            totalValue =
-                totalValue +
-                getUserSingleNftValue(
-                    _user,
-                    stakedNftAddress[_user][nftStakedIndex],
-                    stakedNftId[_user][nftStakedIndex]
-                );
-        }
-        return totalValue;
-    }
-
-    function getUserSingleNftValue(
-        address _user,
-        address _nftAddress,
-        uint256 _nftId
-    ) internal view returns (uint256) {
-        if (numOfNftStaked[_user] <= 0) {
-            return 0;
-        }
-        (uint256 price, uint256 decimals) = getNftValue(_nftAddress, _nftId);
-        return (price / (10**decimals));
-        // 10000000000000000000 ETH
-        // ETH/USD -> 10000000000
-        // 10 * 100 = 1,000
-    }
-
-    function getNftValue(address _nftAddress, uint256 _nftId)
-        internal
-        view
-        returns (uint256, uint256)
-    {
-        // // default setted to 1ETH and 18decimals
-        // return (1, 18);
-
-        // priceFeedAddress
-        // address priceFeedAddress = nftPriceFeedMapping[_nftAddress][_nftId];
-        address priceFeedAddress = nftPriceFeedMapping[_nftAddress];
-        AggregatorV3Interface priceFeed = AggregatorV3Interface(
-            priceFeedAddress
-        );
-        (, int256 price, , , ) = priceFeed.latestRoundData();
-        uint256 decimals = uint256(priceFeed.decimals());
-        return (uint256(price), decimals);
-    }
-
     function setPriceFeedContract(
         address _nftAddress,
         // uint256 _nftId=none,
@@ -496,4 +403,81 @@ contract Escrow is Ownable {
         // nftPriceFeedMapping[_nftAddress][_nftId] = _priceFeed;
         nftPriceFeedMapping[_nftAddress] = _priceFeed;
     }
+
+    // function getBalance() public view returns (uint256) {
+    //     return address(this).balance;
+    // }
+
+    // // e.g.: give 1 DappToken per loanToken loan
+    // function issueTokens() public onlyOwner {
+    //     // ? get each borrower total loan interest profit
+    //     // ? get each NFT (address, id) loaned interest profit
+    //     // Issue tokens to all stakers
+    //     for (uint256 index = 0; index < borrowers.length; index++) {
+    //         address recipient = borrowers[index];
+    //         uint256 userTotalValue = getUserTotalValue(recipient);
+    //         dappToken.transfer(recipient, userTotalValue);
+    //     }
+    // }
+
+    // function getUserTotalValue(address _user)
+    //     public
+    //     view
+    //     onlyOwner
+    //     returns (uint256)
+    // {
+    //     uint256 totalValue = 0;
+    //     // require(numOfNftStaked[_user] > 0, "No nft staked!");
+    //     if (numOfNftStaked[_user] <= 0) {
+    //         return 0;
+    //     }
+    //     for (
+    //         uint256 nftStakedIndex = 0;
+    //         nftStakedIndex < numOfNftStaked[_user];
+    //         nftStakedIndex++
+    //     ) {
+    //         totalValue =
+    //             totalValue +
+    //             getUserSingleNftValue(
+    //                 _user,
+    //                 stakedNftAddress[_user][nftStakedIndex],
+    //                 stakedNftId[_user][nftStakedIndex]
+    //             );
+    //     }
+    //     return totalValue;
+    // }
+
+    // function getUserSingleNftValue(
+    //     address _user,
+    //     address _nftAddress,
+    //     uint256 _nftId
+    // ) internal view returns (uint256) {
+    //     if (numOfNftStaked[_user] <= 0) {
+    //         return 0;
+    //     }
+    //     (uint256 price, uint256 decimals) = getNftValue(_nftAddress, _nftId);
+    //     return (price / (10**decimals));
+    //     // 10000000000000000000 ETH
+    //     // ETH/USD -> 10000000000
+    //     // 10 * 100 = 1,000
+    // }
+
+    // function getNftValue(address _nftAddress, uint256 _nftId)
+    //     internal
+    //     view
+    //     returns (uint256, uint256)
+    // {
+    //     // // default setted to 1ETH and 18decimals
+    //     // return (1, 18);
+
+    //     // priceFeedAddress
+    //     // address priceFeedAddress = nftPriceFeedMapping[_nftAddress][_nftId];
+    //     address priceFeedAddress = nftPriceFeedMapping[_nftAddress];
+    //     AggregatorV3Interface priceFeed = AggregatorV3Interface(
+    //         priceFeedAddress
+    //     );
+    //     (, int256 price, , , ) = priceFeed.latestRoundData();
+    //     uint256 decimals = uint256(priceFeed.decimals());
+    //     return (uint256(price), decimals);
+    // }
 }
