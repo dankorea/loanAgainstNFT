@@ -13,7 +13,7 @@ sample_token_uri = (
 )
 
 KEPT_BALANCE = Web3.toWei(1000, "ether")
-KEPT_LOAT_BALANCE = Web3.toWei(0.06, "ether")
+KEPT_LOAT_BALANCE = Web3.toWei(500000, "ether")
 
 
 def update_front_end():
@@ -67,12 +67,24 @@ def deploy_escrow_and_tokens_and_nfts():
 
     loan_token = get_contract("loan_token")
     loan_token_price_feed = get_contract("loan_token_price_feed")
-    init_amount = loan_token.balanceOf(account.address) - KEPT_LOAT_BALANCE  # ?????
+    init_amount = (
+        loan_token.balanceOf(account.address) / 2
+    )  # give escrow half of the loan token for test
     loan_token.approve(escrow.address, init_amount, {"from": account})
     tx = loan_token.transfer(
         escrow.address,
         init_amount,
-        {"from": account},  # 99%
+        {"from": account},
+    )
+    tx.wait(1)
+    init_amount = (
+        loan_token.balanceOf(account.address) / 2
+    )  # give non-owner half of the left loan token for test
+    loan_token.approve(non_owner.address, init_amount, {"from": account})
+    tx = loan_token.transfer(
+        non_owner.address,
+        init_amount,
+        {"from": account},
     )
     tx.wait(1)
     dict_of_allowed_nfts = {
@@ -97,18 +109,18 @@ def deploy_escrow_and_tokens_and_nfts():
     loanProcess2(escrow, a_nft, a_nft_id, non_owner, loan_token)
     get_stats(escrow)
 
-    # simple_nft_id = 0
-    # repayProcess(escrow, simple_nft, simple_nft_id, account, loan_token)
-    # get_stats(escrow)
-    # a_nft_id = 1
-    # repayProcess(escrow, a_nft, a_nft_id, non_owner, loan_token)
-    # get_stats(escrow)
-    # simple_nft_id = 1
-    # repayProcess(escrow, simple_nft, simple_nft_id, non_owner, loan_token)
-    # get_stats(escrow)
-    # a_nft_id = 0
-    # repayProcess(escrow, a_nft, a_nft_id, account, loan_token)
-    # get_stats(escrow)
+    simple_nft_id = 0
+    repayProcess2(escrow, simple_nft, simple_nft_id, account, loan_token)
+    get_stats(escrow)
+    a_nft_id = 1
+    repayProcess2(escrow, a_nft, a_nft_id, non_owner, loan_token)
+    get_stats(escrow)
+    simple_nft_id = 1
+    repayProcess2(escrow, simple_nft, simple_nft_id, non_owner, loan_token)
+    get_stats(escrow)
+    a_nft_id = 0
+    repayProcess2(escrow, a_nft, a_nft_id, account, loan_token)
+    get_stats(escrow)
 
     # print(escrow.allowedNfts(0))
     # print(escrow.allowedNfts(1))
@@ -172,7 +184,6 @@ def loanProcess2(escrow, simple_nft, simple_nft_id, _account, loan_token):
         simple_nft.address, simple_nft_id
     )
     loan_token.approve(escrow.address, loan_amount, {"from": _account})
-
     tx = escrow.requestLoan(
         loan_token.address,
         simple_nft.address,
@@ -183,6 +194,24 @@ def loanProcess2(escrow, simple_nft, simple_nft_id, _account, loan_token):
         {"from": _account},
     )
     tx.wait(1)
+
+
+def repayProcess2(escrow, simple_nft, simple_nft_id, account, loan_token):
+    time.sleep(1)
+    holder_address, expire_time, repay_amount = escrow.getNftLockData(
+        simple_nft.address, simple_nft_id, {"from": account}
+    )
+    deposit_amount = repay_amount
+    current_time = time.time()
+    if (holder_address == account.address) & (time.time() < expire_time):
+        loan_token.approve(escrow.address, deposit_amount, {"from": account})
+        tx = escrow.redeemLoan(
+            loan_token.address,
+            simple_nft.address,
+            simple_nft_id,
+            {"from": account},
+        )
+        tx.wait(1)
 
 
 def loanProcess(escrow, simple_nft, simple_nft_id, account, loan_token):

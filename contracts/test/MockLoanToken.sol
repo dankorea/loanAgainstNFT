@@ -6,6 +6,6 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract MockLoanToken is ERC20 {
     constructor() public ERC20("Loan Token", "LOANT") {
-        _mint(msg.sender, 1000000000000000000000000);
+        _mint(msg.sender, 1000000000000000000000000); //1 million token
     }
 }

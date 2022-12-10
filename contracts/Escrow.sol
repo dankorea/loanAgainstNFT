@@ -105,6 +105,10 @@ contract Escrow is Ownable {
             nftIsAllowed(_nftAddress),
             "current nft is not allowed in our whitelist!"
         );
+        // require(
+        //     IERC20(_loanTokenAddress).balanceOf(this) >= _loanAmount,
+        //     "Current lender has not sufficient fund, please contact our staff~"
+        // );
         nftStaking(_nftAddress, _nftId);
         loanTransfer(_loanTokenAddress, address(msg.sender), _loanAmount);
         // IERC20(_loanTokenAddress).transfer(address(msg.sender), _loanAmount);
@@ -119,6 +123,38 @@ contract Escrow is Ownable {
             expireTime,
             repayAmount
         );
+    }
+
+    function redeemLoan(
+        address _loanTokenAddress,
+        address _nftAddress,
+        uint256 _nftId
+    ) public {
+        require(
+            nftIsAllowed(_nftAddress),
+            "current nft is not allowed in our whitelist!"
+        );
+
+        (
+            address holder_address,
+            uint256 expire_time,
+            uint256 repay_amount
+        ) = getNftLockData(_nftAddress, _nftId);
+        uint256 currentTime = block.timestamp;
+        require(
+            holder_address == msg.sender,
+            "please use correct wallet to repay and unstake!"
+        );
+        require(
+            currentTime < expire_time,
+            "your loan is overdue, please contact our staff to find solution!"
+        );
+        require(
+            IERC20(_loanTokenAddress).balanceOf(msg.sender) >= repay_amount,
+            "your balance is not enough to replay the loan!"
+        );
+        loanRepay(_loanTokenAddress, repay_amount);
+        nftUnStaking(_nftAddress, _nftId);
     }
 
     function nftStaking(address _nftAddress, uint256 _nftId) public {
@@ -242,6 +278,19 @@ contract Escrow is Ownable {
     }
 
     function nftLock(
+        address _nftAddress,
+        uint256 _nftId,
+        address _holderAddress,
+        uint256 _expireTime,
+        uint256 _repayAmount
+    ) internal {
+        // nft lock parameters setting, is the function public ok?
+        nftLoanHolderAddress[_nftAddress][_nftId] = _holderAddress;
+        nftLoanExpireTime[_nftAddress][_nftId] = _expireTime;
+        nftLoanRepayAmount[_nftAddress][_nftId] = _repayAmount;
+    }
+
+    function nftMLock(
         address _nftAddress,
         uint256 _nftId,
         address _holderAddress,
