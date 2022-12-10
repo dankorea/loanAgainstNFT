@@ -39,7 +39,7 @@ def copy_folders_to_front_end(src, dest):
 
 def deploy_escrow_and_tokens_and_nfts():
     account = get_account()
-    non_owner = get_account(index=1)
+    non_owner = get_account(key=1)
     dapp_token = DappToken.deploy({"from": account})  # governance token
     # loan_token = LoanToken.deploy({"from": account})  # loan token
     escrow = Escrow.deploy(  # escrow wallet
@@ -68,7 +68,7 @@ def deploy_escrow_and_tokens_and_nfts():
     loan_token = get_contract("loan_token")
     loan_token_price_feed = get_contract("loan_token_price_feed")
     init_amount = (
-        loan_token.balanceOf(account.address) / 2
+        loan_token.balanceOf(account.address) / 10
     )  # give escrow half of the loan token for test
     loan_token.approve(escrow.address, init_amount, {"from": account})
     tx = loan_token.transfer(
@@ -78,7 +78,7 @@ def deploy_escrow_and_tokens_and_nfts():
     )
     tx.wait(1)
     init_amount = (
-        loan_token.balanceOf(account.address) / 2
+        loan_token.balanceOf(account.address) / 100
     )  # give non-owner half of the left loan token for test
     loan_token.approve(non_owner.address, init_amount, {"from": account})
     tx = loan_token.transfer(
@@ -174,7 +174,7 @@ def get_stats(escrow):
 
 def loanProcess2(escrow, simple_nft, simple_nft_id, _account, loan_token):
     simple_nft.approve(escrow.address, simple_nft_id, {"from": _account})
-    loan_Amount = Web3.toWei(0.01, "ether")
+    loan_Amount = Web3.toWei(0.0001, "ether")
     loan_Days = 3
     loan_Interest = 28
     escrow.setOffers(
@@ -226,7 +226,7 @@ def loanProcess(escrow, simple_nft, simple_nft_id, account, loan_token):
     )
     tx.wait(1)
 
-    loan_Amount = Web3.toWei(0.01, "ether")
+    loan_Amount = Web3.toWei(0.001, "ether")
     loan_Days = 3
     loan_Interest = 28
     escrow.setOffers(
