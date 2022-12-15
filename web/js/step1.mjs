@@ -5,7 +5,7 @@ import { getLoanToken, getEscrow } from "./contract.mjs";
 
 const nftAddress = "0xca3983f05322ab4ba0d7225867736d13dcaa3d15"; // many doggies
 const nftJson = await inputJsonFile("../contracts/SimpleNFT.json");
-const nftId = "1"; //30930";
+const nftId = "0"; //30930";
 
 
 
@@ -69,11 +69,33 @@ async function borrowClicked() {
   const loanPeriod = document.getElementById("loanPeriod").value;
   const loanInterest = document.getElementById("loanInterest").value; //???
 
+  console.log(loanAmount)
+  console.log(loanPeriod)
+  console.log(loanInterest)
+
   const { tokenAddress, tokenContract } = await getLoanToken();
   const { escrowAddress, escrowContract } = await getEscrow();
 
   try {
-    const resp = await escrowContract.methods.requestLoan(tokenAddress, nftAddress, nftId, loanAmount, loanPeriod, loanInterest).send({ "from": user });
+    const resp = await escrowContract.methods.setOffers(nftAddress, nftId, loanAmount, loanPeriod, loanInterest).send({ "from": user });
+  } catch (e) {
+    console.log("offers setting error!", e);
+  }
+  console.log("offers setted!");
+
+
+  try {
+    const offerInfo = await escrowContract.methods.getOffers(nftAddress, nftId).call({ "from": user });
+    console.log(offerInfo);
+
+  } catch (e) {
+    console.log("offers getting error!", e);
+  }
+  console.log("offers got!");
+
+
+  try {
+    const resp = await escrowContract.methods.requestLoan(tokenAddress, nftAddress, nftId).send({ "from": user });
   } catch (e) {
     console.log("request loan error!", e);
   }
@@ -94,12 +116,12 @@ async function borrowClicked() {
   // console.log("loan transferred!");
 
   // const loanStartTime = Math.floor(Date.now() / 1000.0);
-  // const expireTime = loanStartTime + loanPeriod * 24 * 60 * 60;
-  // const repayAmount = loanAmount * (1 + loanInterest / 10000);
-  // // console.log(typeof (repayAmount));
-  // // console.log(loanStartTime);
-  // // console.log(expireTime);
-  // // console.log(repayAmount);
+  const expireTime = await escrowContract.methods.nftLoanExpireTime(nftAddress, nftId).call({ "from": user });
+  const repayAmount = await escrowContract.methods.nftLoanRepayAmount(nftAddress, nftId).call({ "from": user });
+  // console.log(typeof (repayAmount));
+  // console.log(loanStartTime);
+  // console.log(expireTime);
+  // console.log(repayAmount);
   // try {
   //   const resp = await escrowContract.methods.nftLock(nftAddress, nftId, user, expireTime, repayAmount.toString()).send({ "from": user });
   // } catch (e) {
@@ -107,9 +129,9 @@ async function borrowClicked() {
   // }
   // console.log("nft locked!");
 
-  // document.getElementById("repayAddress").value = user;
-  // document.getElementById("repayAmount").value = repayAmount;
-  // document.getElementById("expireTime").value = expireTime;
+  document.getElementById("repayAddress").value = user;
+  document.getElementById("repayAmount").value = repayAmount;
+  document.getElementById("expireTime").value = expireTime;
 
 
 };

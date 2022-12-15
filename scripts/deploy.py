@@ -176,21 +176,18 @@ def loanProcess2(escrow, simple_nft, simple_nft_id, _account, loan_token):
     simple_nft.approve(escrow.address, simple_nft_id, {"from": _account})
     loan_Amount = Web3.toWei(0.0001, "ether")
     loan_Days = 3
-    loan_Interest = 28
+    loan_Interest = 286
     escrow.setOffers(
         simple_nft.address, simple_nft_id, loan_Amount, loan_Days, loan_Interest
     )
-    loan_amount, loan_days, loan_interest = escrow.getOffers(
-        simple_nft.address, simple_nft_id
-    )
-    loan_token.approve(escrow.address, loan_amount, {"from": _account})
+    # loan_amount, loan_days, loan_interest = escrow.getOffers(
+    #     simple_nft.address, simple_nft_id
+    # )
+    loan_token.approve(escrow.address, loan_Amount, {"from": _account})
     tx = escrow.requestLoan(
         loan_token.address,
         simple_nft.address,
         simple_nft_id,
-        loan_amount,
-        loan_Days,
-        loan_interest,
         {"from": _account},
     )
     tx.wait(1)
@@ -228,7 +225,7 @@ def loanProcess(escrow, simple_nft, simple_nft_id, account, loan_token):
 
     loan_Amount = Web3.toWei(0.001, "ether")
     loan_Days = 3
-    loan_Interest = 28
+    loan_Interest = 286
     escrow.setOffers(
         simple_nft.address, simple_nft_id, loan_Amount, loan_Days, loan_Interest
     )

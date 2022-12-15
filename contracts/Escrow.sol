@@ -90,15 +90,18 @@ contract Escrow is Ownable {
     function requestLoan(
         address _loanTokenAddress,
         address _nftAddress,
-        uint256 _nftId,
-        uint256 _loanAmount,
-        uint256 _loanDays,
-        uint256 _loanInterest
+        uint256 _nftId
     ) public {
         require(
             nftIsAllowed(_nftAddress),
             "current nft is not allowed in our whitelist!"
         );
+
+        (
+            uint256 _loanAmount,
+            uint256 _loanDays,
+            uint256 _loanInterest
+        ) = getOffers(_nftAddress, _nftId); //???should change _loanAmount to ??????
         require(
             IERC20(_loanTokenAddress).balanceOf(address(this)) >= _loanAmount,
             "Current lender has not sufficient fund, please contact our staff~"
@@ -108,8 +111,9 @@ contract Escrow is Ownable {
         // IERC20(_loanTokenAddress).transfer(address(msg.sender), _loanAmount);
         uint256 initTime = block.timestamp;
         uint256 expireTime = initTime + _loanDays * 24 * 60 * 60;
-        uint256 repayAmount = _loanAmount *
-            (1 + _loanInterest / (10**interestDecimals));
+        uint256 repayAmount = (_loanAmount *
+            (1 * (10**interestDecimals) + _loanInterest)) /
+            (10**interestDecimals);
         nftLock(
             _nftAddress,
             _nftId,
