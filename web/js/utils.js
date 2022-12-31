@@ -108,7 +108,7 @@ async function getNftMetadata(contractAddr, tokenId, tokenType) {
 }
 
 async function showOffers(contractAddr, tokenId) {
-  const loanAmount = 0.01;
+  const loanAmount = 0.001;
   const loanPeriod = 3;
   const loanInterest = 286; // decimal: 4
   return { loanAmount, loanPeriod, loanInterest };

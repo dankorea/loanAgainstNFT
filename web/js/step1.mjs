@@ -3,9 +3,9 @@
 import { getLoanToken, getEscrow } from "./contract.mjs";
 
 
-const nftAddress = "0xca3983f05322ab4ba0d7225867736d13dcaa3d15"; // many doggies
+const nftAddress = "0x39fdf5565fa0b762b513a3e2ebe2517a63086821"; // many doggies
 const nftJson = await inputJsonFile("../contracts/SimpleNFT.json");
-const nftId = "0"; //30930";
+const nftId = "2"; //30930";
 
 
 
