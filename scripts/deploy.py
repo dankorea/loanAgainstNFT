@@ -39,7 +39,8 @@ def copy_folders_to_front_end(src, dest):
 
 def deploy_escrow_and_tokens_and_nfts():
     account = get_account()
-    non_owner = get_account(key=1)
+    # non_owner = get_account(index=1)  # gonachi
+    non_owner = get_account(key=1)  # goerli
     dapp_token = DappToken.deploy({"from": account})  # governance token
     # loan_token = LoanToken.deploy({"from": account})  # loan token
     escrow = Escrow.deploy(  # escrow wallet
@@ -93,20 +94,66 @@ def deploy_escrow_and_tokens_and_nfts():
         # b_nft: get_contract("b_nft_price_feed"),
     }
     add_allowed_nfts(escrow, dict_of_allowed_nfts, account)
+    # set simple and a nft collection offers and specific offers
+    loan_Amount = Web3.toWei(0.0001, "ether")
+    loan_Days = 3
+    loan_Interest = 286
+    sel_index = 1
+    tx = escrow.setCollectionOffers(
+        simple_nft.address, loan_Amount, loan_Days, loan_Interest, sel_index
+    )
+    tx.wait(1)
+    sel_index = 2
+    tx = escrow.setCollectionOffers(
+        simple_nft.address, loan_Amount / 2, loan_Days * 2, loan_Interest, sel_index
+    )
+    tx.wait(1)
+    sel_index = 3
+    tx = escrow.setCollectionOffers(
+        simple_nft.address, loan_Amount / 4, loan_Days * 5, loan_Interest, sel_index
+    )
+    tx.wait(1)
+    tx = escrow.setOffers(
+        simple_nft.address, simple_nft_id, loan_Amount * 2, loan_Days * 3, loan_Interest
+    )
+    tx.wait(1)
+    sel_index = 1
+    tx = escrow.setCollectionOffers(
+        a_nft.address, loan_Amount, loan_Days, loan_Interest, sel_index
+    )
+    tx.wait(1)
+    sel_index = 2
+    tx = escrow.setCollectionOffers(
+        a_nft.address, loan_Amount / 4, loan_Days * 3, loan_Interest, sel_index
+    )
+    tx.wait(1)
+    sel_index = 3
+    tx = escrow.setCollectionOffers(
+        a_nft.address, loan_Amount / 8, loan_Days * 6, loan_Interest, sel_index
+    )
+    tx.wait(1)
+    tx = escrow.setOffers(
+        a_nft.address, a_nft_id, loan_Amount * 3, loan_Days * 2, loan_Interest
+    )
+    tx.wait(1)
 
-    loanProcess2(escrow, simple_nft, simple_nft_id, account, loan_token)
+    sel_index = 2
+    loanProcess2(escrow, simple_nft, simple_nft_id, sel_index, account, loan_token)
     get_stats(escrow)
-    loanProcess2(escrow, a_nft, a_nft_id, account, loan_token)
+    sel_index = 0
+    loanProcess2(escrow, a_nft, a_nft_id, sel_index, account, loan_token)
     get_stats(escrow)
     tx = simple_nft.createNFT(sample_token_uri, {"from": non_owner})
     tx.wait(1)
     simple_nft_id = 1
-    loanProcess2(escrow, simple_nft, simple_nft_id, non_owner, loan_token)
+    sel_index = 0
+    loanProcess2(escrow, simple_nft, simple_nft_id, sel_index, non_owner, loan_token)
     get_stats(escrow)
     tx = a_nft.createNFT(sample_token_uri, {"from": non_owner})
     tx.wait(1)
     a_nft_id = 1
-    loanProcess2(escrow, a_nft, a_nft_id, non_owner, loan_token)
+    sel_index = 2
+    loanProcess2(escrow, a_nft, a_nft_id, sel_index, non_owner, loan_token)
     get_stats(escrow)
 
     simple_nft_id = 0
@@ -149,6 +196,7 @@ def get_stats(escrow):
             nftLoanAmount = escrow.nftLoanAmount(stakedNftAddress, stakedNftId)
             nftLoanPeriod = escrow.nftLoanPeriod(stakedNftAddress, stakedNftId)
             nftLoanInterest = escrow.nftLoanInterest(stakedNftAddress, stakedNftId)
+
             nftLoanRepayAmount = escrow.nftLoanRepayAmount(
                 stakedNftAddress, stakedNftId
             )
@@ -172,22 +220,18 @@ def get_stats(escrow):
             )
 
 
-def loanProcess2(escrow, simple_nft, simple_nft_id, _account, loan_token):
+def loanProcess2(escrow, simple_nft, simple_nft_id, sel_index, _account, loan_token):
     simple_nft.approve(escrow.address, simple_nft_id, {"from": _account})
-    loan_Amount = Web3.toWei(0.0001, "ether")
-    loan_Days = 3
-    loan_Interest = 286
-    escrow.setOffers(
-        simple_nft.address, simple_nft_id, loan_Amount, loan_Days, loan_Interest
+
+    loan_amount, loan_days, loan_interest = escrow.getOffers(
+        simple_nft.address, simple_nft_id, sel_index
     )
-    # loan_amount, loan_days, loan_interest = escrow.getOffers(
-    #     simple_nft.address, simple_nft_id
-    # )
-    loan_token.approve(escrow.address, loan_Amount, {"from": _account})
+    loan_token.approve(escrow.address, loan_amount, {"from": _account})
     tx = escrow.requestLoan(
         loan_token.address,
         simple_nft.address,
         simple_nft_id,
+        sel_index,
         {"from": _account},
     )
     tx.wait(1)

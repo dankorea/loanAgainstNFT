@@ -44,14 +44,27 @@ contract Escrow is Ownable {
     mapping(address => mapping(uint256 => uint256)) public nftLoanRepayAmount;
     mapping(address => mapping(uint256 => uint256)) public nftLoanExpireTime;
     mapping(address => mapping(uint256 => address)) public nftLoanHolderAddress;
-    // mapping nft address -> nft id -> { loanPeriod, loanAmount, loanInterest}
+    // mapping nft address -> nft id -> { loanPeriod, loanAmount, loanInterest}  Final loan offer
     mapping(address => mapping(uint256 => uint256)) public nftLoanAmount; // unit: wei
     mapping(address => mapping(uint256 => uint256)) public nftLoanPeriod; // unit: days
     mapping(address => mapping(uint256 => uint256)) public nftLoanInterest; // decimals: 4
-    // mapping nft address -> { loanPeriod, loanAmount, loanInterest} collection offer
-    mapping(address => uint256) nftCollectionLoanAmount; // unit: wei
-    mapping(address => uint256) nftCollectionLoanPeriod; // unit: days
-    mapping(address => uint256) nftCollectionLoanInterest; // decimals: 4
+    // mapping nft address -> nft id -> { loanPeriod, loanAmount, loanInterest} Specific loan offer
+    mapping(address => mapping(uint256 => uint256))
+        public nftSpecificLoanAmount; // unit: wei
+    mapping(address => mapping(uint256 => uint256))
+        public nftSpecificLoanPeriod; // unit: days
+    mapping(address => mapping(uint256 => uint256))
+        public nftSpecificLoanInterest; // decimals: 4
+    // mapping nft address -> { loanPeriod, loanAmount, loanInterest} collection loan offer
+    mapping(address => uint256) nftCollectionLoanAmountS; // unit: wei
+    mapping(address => uint256) nftCollectionLoanPeriodS; // unit: days
+    mapping(address => uint256) nftCollectionLoanInterestS; // decimals: 4
+    mapping(address => uint256) nftCollectionLoanAmountM; // unit: wei
+    mapping(address => uint256) nftCollectionLoanPeriodM; // unit: days
+    mapping(address => uint256) nftCollectionLoanInterestM; // decimals: 4
+    mapping(address => uint256) nftCollectionLoanAmountL; // unit: wei
+    mapping(address => uint256) nftCollectionLoanPeriodL; // unit: days
+    mapping(address => uint256) nftCollectionLoanInterestL; // decimals: 4
 
     constructor(address _dappTokenAddress) public {
         dappToken = IERC20(_dappTokenAddress);
@@ -90,7 +103,8 @@ contract Escrow is Ownable {
     function requestLoan(
         address _loanTokenAddress,
         address _nftAddress,
-        uint256 _nftId
+        uint256 _nftId,
+        uint256 _selIndex
     ) public {
         require(
             nftIsAllowed(_nftAddress),
@@ -101,13 +115,16 @@ contract Escrow is Ownable {
             uint256 _loanAmount,
             uint256 _loanDays,
             uint256 _loanInterest
-        ) = getOffers(_nftAddress, _nftId); //???should change _loanAmount to ??????
+        ) = getOffers(_nftAddress, _nftId, _selIndex);
         require(
             IERC20(_loanTokenAddress).balanceOf(address(this)) >= _loanAmount,
             "Current lender has not sufficient fund, please contact our staff~"
         );
         nftStaking(_nftAddress, _nftId);
         loanTransfer(_loanTokenAddress, address(msg.sender), _loanAmount);
+        nftLoanAmount[_nftAddress][_nftId] = _loanAmount;
+        nftLoanPeriod[_nftAddress][_nftId] = _loanDays;
+        nftLoanInterest[_nftAddress][_nftId] = _loanInterest;
         // IERC20(_loanTokenAddress).transfer(address(msg.sender), _loanAmount);
         uint256 initTime = block.timestamp;
         uint256 expireTime = initTime + _loanDays * 24 * 60 * 60;
@@ -244,23 +261,66 @@ contract Escrow is Ownable {
         uint256 _loanPeriod,
         uint256 _loanInterest
     ) public onlyOwner {
-        nftLoanAmount[_nftAddress][_nftId] = _loanAmount;
-        nftLoanInterest[_nftAddress][_nftId] = _loanInterest;
-        nftLoanPeriod[_nftAddress][_nftId] = _loanPeriod;
+        nftSpecificLoanAmount[_nftAddress][_nftId] = _loanAmount;
+        nftSpecificLoanInterest[_nftAddress][_nftId] = _loanInterest;
+        nftSpecificLoanPeriod[_nftAddress][_nftId] = _loanPeriod;
     }
 
     function setCollectionOffers(
         address _nftAddress,
         uint256 _loanAmount,
         uint256 _loanPeriod,
-        uint256 _loanInterest
+        uint256 _loanInterest,
+        uint256 _selIndex
     ) public onlyOwner {
-        nftCollectionLoanAmount[_nftAddress] = _loanAmount;
-        nftCollectionLoanInterest[_nftAddress] = _loanInterest;
-        nftCollectionLoanPeriod[_nftAddress] = _loanPeriod;
+        if (_selIndex == 1) {
+            nftCollectionLoanAmountS[_nftAddress] = _loanAmount;
+            nftCollectionLoanPeriodS[_nftAddress] = _loanPeriod;
+            nftCollectionLoanInterestS[_nftAddress] = _loanInterest;
+        } else if (_selIndex == 2) {
+            nftCollectionLoanAmountM[_nftAddress] = _loanAmount;
+            nftCollectionLoanPeriodM[_nftAddress] = _loanPeriod;
+            nftCollectionLoanInterestM[_nftAddress] = _loanInterest;
+        } else {
+            nftCollectionLoanAmountL[_nftAddress] = _loanAmount;
+            nftCollectionLoanPeriodL[_nftAddress] = _loanPeriod;
+            nftCollectionLoanInterestL[_nftAddress] = _loanInterest;
+        }
     }
 
-    function getOffers(address _nftAddress, uint256 _nftId)
+    // function getAllOffers(address _nftAddress, uint256 _nftId)
+    //     public
+    //     view
+    //     returns (
+    //         uint256,
+    //         uint256,
+    //         uint256,
+    //         uint256,
+    //         uint256,
+    //         uint256
+    //     )
+    // {
+    //     return (
+    //         nftSpecificLoanAmount[_nftAddress][_nftId],
+    //         nftSpecificLoanPeriod[_nftAddress][_nftId],
+    //         nftSpecificLoanInterest[_nftAddress][_nftId],
+    //         nftCollectionLoanAmountS[_nftAddress],
+    //         nftCollectionLoanPeriodS[_nftAddress],
+    //         nftCollectionLoanInterestS[_nftAddress]
+    //         // nftCollectionLoanAmountM[_nftAddress],
+    //         // nftCollectionLoanPeriodM[_nftAddress],
+    //         // nftCollectionLoanInterestM[_nftAddress],
+    //         // nftCollectionLoanAmountL[_nftAddress],
+    //         // nftCollectionLoanPeriodL[_nftAddress],
+    //         // nftCollectionLoanInterestL[_nftAddress]
+    //     );
+    // }
+
+    function getOffers(
+        address _nftAddress,
+        uint256 _nftId,
+        uint256 _selIndex
+    )
         public
         view
         returns (
@@ -269,9 +329,30 @@ contract Escrow is Ownable {
             uint256
         )
     {
-        uint256 loan_amount = nftLoanAmount[_nftAddress][_nftId];
-        uint256 loan_interest = nftLoanInterest[_nftAddress][_nftId];
-        uint256 loan_period = nftLoanPeriod[_nftAddress][_nftId];
+        uint256 loan_amount;
+        uint256 loan_period;
+        uint256 loan_interest;
+        if (_selIndex == 0) {
+            loan_amount = nftSpecificLoanAmount[_nftAddress][_nftId];
+            loan_period = nftSpecificLoanPeriod[_nftAddress][_nftId];
+            loan_interest = nftSpecificLoanInterest[_nftAddress][_nftId];
+        } else if (_selIndex == 1) {
+            loan_amount = nftCollectionLoanAmountS[_nftAddress];
+            loan_period = nftCollectionLoanPeriodS[_nftAddress];
+            loan_interest = nftCollectionLoanInterestS[_nftAddress];
+        } else if (_selIndex == 2) {
+            loan_amount = nftCollectionLoanAmountM[_nftAddress];
+            loan_period = nftCollectionLoanPeriodM[_nftAddress];
+            loan_interest = nftCollectionLoanInterestM[_nftAddress];
+        } else {
+            loan_amount = nftCollectionLoanAmountL[_nftAddress];
+            loan_period = nftCollectionLoanPeriodL[_nftAddress];
+            loan_interest = nftCollectionLoanInterestL[_nftAddress];
+        }
+        if (loan_period < 1) {
+            // prevent some singurity
+            loan_period = 1;
+        }
         return (loan_amount, loan_period, loan_interest);
     }
 
